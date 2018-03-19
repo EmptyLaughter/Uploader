@@ -4,7 +4,7 @@ import dropbox
 import time
 from datetime import datetime
 
-def fileSize(file_path):
+def file_size(file_path):
     """
     @summary: gets the size of the file
     @param file_path: the path to the file
@@ -16,7 +16,7 @@ def fileSize(file_path):
         total_size += os.stat(full_file_path).st_size
     return total_size
 
-def dropboxUpload(auth_token, file, name):
+def dropbox_upload(auth_token, file, name):
     """
     @summary: Uploads a file to a specified dropbox account
     @param auth_token: access token for the account to link
@@ -32,7 +32,7 @@ def dropboxUpload(auth_token, file, name):
     else:
         return "Authentication failed. The file was not able to be uploaded."
 
-def deleteFile(file_path):
+def delete_file(file_path):
     """
     @summary: Deletes a file on the harddrive
     @param file_path: path to the file
@@ -44,7 +44,7 @@ def deleteFile(file_path):
     except OSError, e:
         return "The file %s is a directory. Deletion not successful." %file_path
 
-def writeTo(log_file_path, details):
+def write_to(log_file_path, details):
     """
     @summary: writes the details of a successful upload and deletion to a log file;
     a new log file will be created if the given one does not already exist
@@ -52,11 +52,14 @@ def writeTo(log_file_path, details):
     @param details: date and time of successful upload and path of deleted filed
     """
     my_path = log_file_path
-    f = open(my_path, "a")
-    f.write(details + "\n")
-    f.close()
+    try:
+        f = open(my_path, "a")
+        f.write(details + "\n")
+        f.close()
+    except Exception as e:
+        
 
-def monitorFile(dir_to_watch, log_file, dbx_auth_token, dbx_file_path):
+def monitor_file(dir_to_watch, log_file, dbx_auth_token, dbx_file_path):
     """
     @summary: watches a configurable directory, uploads the file to specified online account,
     and deletes the file on local hard disk upon successful upload
@@ -71,27 +74,27 @@ def monitorFile(dir_to_watch, log_file, dbx_auth_token, dbx_file_path):
     file_path = dbx_file_path
 
     #size and time new modifications are checked against
-    last_modified_file = fileSize(direc)
+    last_modified_file = file_size(direc)
     now_timestamp = time.asctime(time.localtime(time.time()))
-    writeTo(log, "Start: " + str(now_timestamp))
+    write_to(log, "Start: " + str(now_timestamp))
     now_timestamp_datetime = datetime.strptime(now_timestamp, "%a %b %d %H:%M:%S %Y")
 
     while True:
-        new_modified_file = fileSize(direc)
+        new_modified_file = file_size(direc)
         if last_modified_file != new_modified_file:
             for f in os.listdir(direc):
                 path = os.path.join(direc, f)
                 f_timestamp = time.ctime(os.stat(path).st_ctime)  # time file was created
                 f_timestamp_datetime = datetime.strptime(f_timestamp, "%a %b %d %H:%M:%S %Y")  # creates datetime object of time created
                 if f_timestamp_datetime > now_timestamp_datetime:
-                    writeTo(log, f)
+                    write_to(log, f)
                     file_content = open(path)
                     file_content_tostring = str(file_content.read())
-                    upload = dropboxUpload(auth_token, file_content_tostring, file_path + "-" + str(f))
-                    writeTo(log, upload)
+                    upload = dropbox_upload(auth_token, file_content_tostring, file_path + "-" + str(f))
+                    write_to(log, upload)
                     if "Successful" in upload:
-                        delete = deleteFile(path)
-                        writeTo(log, delete)
+                        delete = delete_file(path)
+                        write_to(log, delete)
 
 print "Enter the directory path: "
 directory = str(raw_input())
@@ -103,7 +106,7 @@ print "Enter the configurable path to the file on your Dropbox account:"
 dbx_file_path = str(raw_input())
 print "Now monitoring... \n"
 
-monitorFile(directory, log, dbx_auth_token, dbx_file_path)
+monitor_file(directory, log, dbx_auth_token, dbx_file_path)
 
 
 
